@@ -66,11 +66,28 @@ class ArgumentsSniff implements Sniff
             $error .= 'as the method/function name, ';
             $error .= 'no matter how many arguments there are.';
 
-            $phpcsFile->addError(
+            $fixable = $phpcsFile->addFixableError(
                 $error,
                 $stackPtr,
                 'Invalid'
             );
+
+            if (false === $fixable) {
+                return;
+            }
+
+            $whitespacePtr = $phpcsFile->findNext(T_WHITESPACE, $function['parenthesis_opener'], $function['parenthesis_closer']);
+
+            $phpcsFile->fixer->beginChangeset();
+            while (false !== $whitespacePtr) {
+                if ("\n" === $tokens[$whitespacePtr]['content']) {
+                    $phpcsFile->fixer->replaceToken($whitespacePtr, ' ');
+                } else if (" " !== $tokens[$whitespacePtr]['content']) {
+                    $phpcsFile->fixer->replaceToken($whitespacePtr, '');
+                }
+                $whitespacePtr = $phpcsFile->findNext(T_WHITESPACE, $whitespacePtr + 1, $function['parenthesis_closer']);
+            }
+            $phpcsFile->fixer->endChangeset();
         }
     }
 
