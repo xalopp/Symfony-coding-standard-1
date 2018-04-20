@@ -10,3 +10,23 @@ function bar($foo, $baz)
 {
 
 }
+
+function baz1(
+) {}
+
+function baz2(
+ ) {}
+
+function baz3(
+    // $baz
+){}
+
+function baz4(
+    array
+    $a
+    =
+    array(
+        1,
+        '   '
+    )){
+}

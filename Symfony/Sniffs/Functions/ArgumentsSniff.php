@@ -16,6 +16,7 @@ namespace Symfony\Sniffs\Functions;
 
 use PHP_CodeSniffer\Files\File;
 use PHP_CodeSniffer\Sniffs\Sniff;
+use PHP_CodeSniffer\Util\Tokens;
 
 /**
  * Checks whether functions are defined on one line.
@@ -58,13 +59,31 @@ class ArgumentsSniff implements Sniff
         $tokens = $phpcsFile->getTokens();
         $function = $tokens[$stackPtr];
 
-        $openerLine = $tokens[$function['parenthesis_opener']]['line'];
-        $closerLine = $tokens[$function['parenthesis_closer']]['line'];
+        $parenthesis_opener = $function['parenthesis_opener'];
+        $parenthesis_closer = $function['parenthesis_closer'];
+        $openerLine         = $tokens[$parenthesis_opener]['line'];
+        $closerLine         = $tokens[$function['parenthesis_closer']]['line'];
 
         if ($openerLine !== $closerLine) {
             $error = 'Declare all the arguments on the same line ';
             $error .= 'as the method/function name, ';
             $error .= 'no matter how many arguments there are.';
+
+            $commentPtr = $phpcsFile->findNext(
+                Tokens::$commentTokens,
+                $parenthesis_opener,
+                $parenthesis_closer
+            );
+
+            if ($commentPtr !== false) {
+                $phpcsFile->addError(
+                    $error,
+                    $stackPtr,
+                    'Invalid'
+                );
+
+                return;
+            }
 
             $fixable = $phpcsFile->addFixableError(
                 $error,
@@ -76,16 +95,22 @@ class ArgumentsSniff implements Sniff
                 return;
             }
 
-            $whitespacePtr = $phpcsFile->findNext(T_WHITESPACE, $function['parenthesis_opener'], $function['parenthesis_closer']);
+            $whitespacePtr = $phpcsFile->findNext(
+                T_WHITESPACE,
+                $parenthesis_opener,
+                $function['parenthesis_closer']
+            );
 
             $phpcsFile->fixer->beginChangeset();
             while (false !== $whitespacePtr) {
                 if ("\n" === $tokens[$whitespacePtr]['content']) {
                     $phpcsFile->fixer->replaceToken($whitespacePtr, ' ');
-                } else if (" " !== $tokens[$whitespacePtr]['content']) {
-                    $phpcsFile->fixer->replaceToken($whitespacePtr, '');
                 }
-                $whitespacePtr = $phpcsFile->findNext(T_WHITESPACE, $whitespacePtr + 1, $function['parenthesis_closer']);
+                $whitespacePtr = $phpcsFile->findNext(
+                    T_WHITESPACE,
+                    $whitespacePtr + 1,
+                    $function['parenthesis_closer']
+                );
             }
             $phpcsFile->fixer->endChangeset();
         }

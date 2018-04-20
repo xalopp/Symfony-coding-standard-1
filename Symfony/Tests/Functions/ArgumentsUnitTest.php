@@ -43,7 +43,11 @@ class ArgumentsUnitTest extends AbstractSniffUnitTest
     public function getErrorList()
     {
         return array(
-            3 => 1,
+            3  => 1,
+            14 => 1,
+            17 => 1,
+            20 => 1,
+            24 => 1,
         );
     }
 
